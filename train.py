@@ -5,7 +5,6 @@ import engine
 import torch
 import utils
 import params
-import sandesh
 import pandas as pd
 import torch.nn as nn
 import numpy as np
@@ -67,12 +66,11 @@ def run(fold):
     model, optimizer = amp.initialize(model, optimizer, opt_level="O1", verbosity=0)
 
     es = utils.EarlyStopping(patience=5, mode="max")
-    sandesh.send("Training is Starting")
     for epoch in range(config.EPOCHS):
         engine.train_fn(train_data_loader, model, optimizer, device, scheduler=scheduler)
         jaccard = engine.eval_fn(valid_data_loader, model, device)
         print(f"Jaccard Score = {jaccard}")
-        sandesh.send(f"Epoch={epoch}, Jaccard={jaccard}")
+        print(f"Epoch={epoch}, Jaccard={jaccard}")
         es(jaccard, model, model_path=f"model_{fold}.bin")
         if es.early_stop:
             print("Early stopping")
