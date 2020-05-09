@@ -9,6 +9,7 @@ import pandas as pd
 import torch.nn as nn
 import numpy as np
 from torch.optim import lr_scheduler
+import argparse
 
 from model import TweetModel
 from sklearn import model_selection
@@ -53,7 +54,7 @@ def run(fold):
 
     device = torch.device("cuda") if torch.cuda.is_available() else torch.device('cpu')
     print(f'training on {device}')
-    model_config = transformers.BertConfig.from_pretrained(config.BERT_PATH)
+    model_config = transformers.RobertaConfig.from_pretrained(config.ROBERTA_PATH)
     model_config.output_hidden_states = True
     model = TweetModel(conf=model_config)
     model.to(device)
@@ -78,5 +79,8 @@ def run(fold):
 
 
 if __name__ == "__main__":
-    FOLD = int(os.environ.get("FOLD"))
-    run(fold=FOLD)
+    argparser = argparse.ArgumentParser()
+    argparser.add_argument('-fold', type=int, default=0)
+    args = argparser.parse_args()
+
+    run(fold=args.fold)

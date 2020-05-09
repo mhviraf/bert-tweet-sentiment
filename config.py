@@ -1,5 +1,6 @@
 import tokenizers
 
+TRAINING_FILE  = 'data/train_folds.csv'
 MAX_LEN = 192
 TRAIN_BATCH_SIZE = 32
 VALID_BATCH_SIZE = 8

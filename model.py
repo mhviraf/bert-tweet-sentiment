@@ -8,7 +8,7 @@ from torch.nn import functional as F
 class TweetModel(transformers.BertPreTrainedModel):
     def __init__(self, conf):
         super(TweetModel, self).__init__(conf)
-        self.roberta = transformers.RobertaModel.from_pretrained(ROBERTA_PATH, config=conf)
+        self.roberta = transformers.RobertaModel.from_pretrained(config.ROBERTA_PATH, config=conf)
         self.drop_out = nn.Dropout(0.1)
         self.l0 = nn.Linear(768 * 2, 2)
         torch.nn.init.normal_(self.l0.weight, std=0.02)
