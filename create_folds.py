@@ -3,7 +3,7 @@ from sklearn import model_selection
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("../input/train.csv")
+    df = pd.read_csv("data/train.csv")
     df = df.dropna().reset_index(drop=True)
     df["kfold"] = -1
 
@@ -15,4 +15,4 @@ if __name__ == "__main__":
         print(len(trn_), len(val_))
         df.loc[val_, 'kfold'] = fold
     
-    df.to_csv("../input/train_folds.csv", index=False)
+    df.to_csv("data/train_folds.csv", index=False)

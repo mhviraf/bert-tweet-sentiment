@@ -52,7 +52,8 @@ def run(fold):
         num_workers=2
     )
 
-    device = torch.device("cuda")
+    device = torch.device("cuda") if torch.cuda.is_available() else torch.device('cpu')
+    print(f'training on {device}')
     model_config = transformers.BertConfig.from_pretrained(config.BERT_PATH)
     model_config.output_hidden_states = True
     model = TweetModel(conf=model_config)
