@@ -30,15 +30,12 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
         ids = d["ids"]
         token_type_ids = d["token_type_ids"]
         mask = d["mask"]
-        targets_start = d["targets_start"]
-        targets_end = d["targets_end"]
         sentiment = d["sentiment"]
         orig_selected = d["orig_selected"]
         orig_tweet = d["orig_tweet"]
         targets_start = d["targets_start"]
         targets_end = d["targets_end"]
-        offsets_start = d["offsets_start"].numpy()
-        offsets_end = d["offsets_end"].numpy()
+        offsets = d["offsets"].numpy()
 
         ids = ids.to(device, dtype=torch.long)
         token_type_ids = token_type_ids.to(device, dtype=torch.long)
@@ -66,14 +63,13 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
         for px, tweet in enumerate(orig_tweet):
             selected_tweet = orig_selected[px]
             tweet_sentiment = sentiment[px]
-            jaccard_score = calculate_jaccard_score(
+            jaccard_score, _ = calculate_jaccard_score(
                 original_tweet=tweet,
                 target_string=selected_tweet,
                 sentiment_val=tweet_sentiment,
                 idx_start=np.argmax(outputs_start[px, :]),
                 idx_end=np.argmax(outputs_end[px, :]),
-                offsets_start=offsets_start[px, :],
-                offsets_end=offsets_end[px, :]
+                offsets=offsets[px]
             )
             jaccard_scores.append(jaccard_score)
 
@@ -119,7 +115,7 @@ def eval_fn(data_loader, model, device):
             for px, tweet in enumerate(orig_tweet):
                 selected_tweet = orig_selected[px]
                 tweet_sentiment = sentiment[px]
-                jaccard_score = calculate_jaccard_score(
+                jaccard_score, _ = calculate_jaccard_score(
                     original_tweet=tweet,
                     target_string=selected_tweet,
                     sentiment_val=tweet_sentiment,
@@ -143,37 +139,19 @@ def calculate_jaccard_score(
     sentiment_val, 
     idx_start, 
     idx_end, 
-    offsets_start, 
-    offsets_end,
+    offsets,
     verbose=False):
-
-    offsets = list(zip(offsets_start, offsets_end))
     
     if idx_end < idx_start:
         idx_end = idx_start
     
     filtered_output  = ""
-    original_tweet_sp = " ".join(original_tweet.split())
     for ix in range(idx_start, idx_end + 1):
-        if offsets[ix][0] == 0 and offsets[ix][1] == 0:
-            continue
-        filtered_output += original_tweet_sp[offsets[ix][0]: offsets[ix][1]]
+        filtered_output += original_tweet[offsets[ix][0]: offsets[ix][1]]
         if (ix+1) < len(offsets) and offsets[ix][1] < offsets[ix+1][0]:
             filtered_output += " "
 
-    filtered_output = filtered_output.replace(" .", ".")
-    filtered_output = filtered_output.replace(" ?", "?")
-    filtered_output = filtered_output.replace(" !", "!")
-    filtered_output = filtered_output.replace(" ,", ",")
-    filtered_output = filtered_output.replace(" ' ", "'")
-    filtered_output = filtered_output.replace(" n't", "n't")
-    filtered_output = filtered_output.replace(" 'm", "'m")
-    filtered_output = filtered_output.replace(" do not", " don't")
-    filtered_output = filtered_output.replace(" 's", "'s")
-    filtered_output = filtered_output.replace(" 've", "'ve")
-    filtered_output = filtered_output.replace(" 're", "'re")
-
-    if sentiment_val == "neutral":
+    if sentiment_val == "neutral" or len(original_tweet.split()) < 2:
         filtered_output = original_tweet
 
     if sentiment_val != "neutral" and verbose == True:
@@ -185,4 +163,4 @@ def calculate_jaccard_score(
             print("********************************")
 
     jac = utils.jaccard(target_string.strip(), filtered_output.strip())
-    return jac
+    return jac, filtered_output
