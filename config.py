@@ -1,13 +1,13 @@
 import tokenizers
 
-MAX_LEN = 160
+MAX_LEN = 192
 TRAIN_BATCH_SIZE = 32
-VALID_BATCH_SIZE = 16
-EPOCHS = 15
-BERT_PATH = "/home/abhishek/workspace/bert_base_uncased"
-MODEL_PATH = "model.bin"
-TRAINING_FILE = "../input/train_folds.csv"
-TOKENIZER = tokenizers.BertWordPieceTokenizer(
-    f"{BERT_PATH}/vocab.txt", 
-    lowercase=True
+VALID_BATCH_SIZE = 8
+EPOCHS = 5
+ROBERTA_PATH = "../input/roberta-base"
+TOKENIZER = tokenizers.ByteLevelBPETokenizer(
+    vocab_file=f"{ROBERTA_PATH}/vocab.json", 
+    merges_file=f"{ROBERTA_PATH}/merges.txt", 
+    lowercase=True,
+    add_prefix_space=True
 )
