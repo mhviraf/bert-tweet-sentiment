@@ -17,7 +17,7 @@ def loss_fn(start_logits, end_logits, start_positions, end_positions):
     return total_loss
 
 
-def train_fn(data_loader, model, optimizer, device, scheduler=None):
+def train_fn(data_loader, model, optimizer, device, scheduler=None, writer=None, epoch=0):
     model.train()
     model.zero_grad()
     losses = utils.AverageMeter()
@@ -77,8 +77,11 @@ def train_fn(data_loader, model, optimizer, device, scheduler=None):
         losses.update(loss.item(), ids.size(0))
         tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
 
+    writer.add_scalar('Loss/train', losses.avg, epoch)
+    writer.add_scalar('Jaccard/train', jaccards.avg, epoch)
 
-def eval_fn(data_loader, model, device):
+
+def eval_fn(data_loader, model, device, writer=None, epoch=0):
     model.eval()
     losses = utils.AverageMeter()
     jaccards = utils.AverageMeter()
@@ -94,8 +97,7 @@ def eval_fn(data_loader, model, device):
             orig_tweet = d["orig_tweet"]
             targets_start = d["targets_start"]
             targets_end = d["targets_end"]
-            offsets_start = d["offsets_start"].numpy()
-            offsets_end = d["offsets_end"].numpy()
+            offsets = d["offsets"].numpy()
 
             ids = ids.to(device, dtype=torch.long)
             token_type_ids = token_type_ids.to(device, dtype=torch.long)
@@ -115,14 +117,13 @@ def eval_fn(data_loader, model, device):
             for px, tweet in enumerate(orig_tweet):
                 selected_tweet = orig_selected[px]
                 tweet_sentiment = sentiment[px]
-                jaccard_score, _ = calculate_jaccard_score(
+                jaccard_score, output_sentence = calculate_jaccard_score(
                     original_tweet=tweet,
                     target_string=selected_tweet,
                     sentiment_val=tweet_sentiment,
                     idx_start=np.argmax(outputs_start[px, :]),
                     idx_end=np.argmax(outputs_end[px, :]),
-                    offsets_start=offsets_start[px, :],
-                    offsets_end=offsets_end[px, :]
+                    offsets=offsets[px]
                 )
                 jaccard_scores.append(jaccard_score)
 
@@ -131,6 +132,8 @@ def eval_fn(data_loader, model, device):
             tk0.set_postfix(loss=losses.avg, jaccard=jaccards.avg)
     
     print(f"Jaccard = {jaccards.avg}")
+    writer.add_scalar('Loss/valid', losses.avg, epoch)
+    writer.add_scalar('Jaccard/valid', jaccards.avg, epoch)
     return jaccards.avg
 
 def calculate_jaccard_score(

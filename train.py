@@ -1,27 +1,31 @@
-import config
-import dataset
 import os
-import engine
-import torch
-import utils
-import params
-import pandas as pd
-import torch.nn as nn
-import numpy as np
-from torch.optim import lr_scheduler
 import argparse
 
-from model import TweetModel
+import numpy as np
+import pandas as pd
+import torch
+import torch.nn as nn
 from sklearn import model_selection
 from sklearn import metrics
 import transformers
 from transformers import AdamW
 from transformers import get_linear_schedule_with_warmup
-
+from torch.utils.tensorboard import SummaryWriter
+from torch.optim import lr_scheduler
 from apex import amp
 
+from model import TweetModel
+import config
+import dataset
+import engine
+import utils
+import params
+
+
+SAVE_PATH = '../gdrive/My Drive/tweet-sentiment-extraction'
 
 def run(fold, model_name):
+    writer = SummaryWriter(log_dir=f'{SAVE_PATH}/', filename_suffix=f'{model_name}-fold{fold}')
     dfx = pd.read_csv(config.TRAINING_FILE)
 
     df_train = dfx[dfx.kfold != fold].reset_index(drop=True)
@@ -68,11 +72,11 @@ def run(fold, model_name):
 
     es = utils.EarlyStopping(patience=5, mode="max")
     for epoch in range(config.EPOCHS):
-        engine.train_fn(train_data_loader, model, optimizer, device, scheduler=scheduler)
-        jaccard = engine.eval_fn(valid_data_loader, model, device)
+        engine.train_fn(train_data_loader, model, optimizer, device, scheduler=scheduler, writer)
+        jaccard = engine.eval_fn(valid_data_loader, model, device, writer)
         print(f"Jaccard Score = {jaccard}")
         print(f"Epoch={epoch}, Jaccard={jaccard}")
-        es(jaccard, model, model_path=f"../gdrive/My Drive/tweet-sentiment-extraction/{model_name}-f{fold}.pt")
+        es(jaccard, model, model_path=f"{SAVE_PATH}/{model_name}-f{fold}.pt")
         if es.early_stop:
             print("Early stopping")
             break
