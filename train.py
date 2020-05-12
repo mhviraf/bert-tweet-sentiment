@@ -21,7 +21,7 @@ from transformers import get_linear_schedule_with_warmup
 from apex import amp
 
 
-def run(fold):
+def run(fold, model_name):
     dfx = pd.read_csv(config.TRAINING_FILE)
 
     df_train = dfx[dfx.kfold != fold].reset_index(drop=True)
@@ -72,7 +72,7 @@ def run(fold):
         jaccard = engine.eval_fn(valid_data_loader, model, device)
         print(f"Jaccard Score = {jaccard}")
         print(f"Epoch={epoch}, Jaccard={jaccard}")
-        es(jaccard, model, model_path=f"model_{fold}.bin")
+        es(jaccard, model, model_path=f"../gdrive/My Drive/tweet-sentiment-extraction/{model_name}-f{fold}.pt")
         if es.early_stop:
             print("Early stopping")
             break
@@ -81,6 +81,7 @@ def run(fold):
 if __name__ == "__main__":
     argparser = argparse.ArgumentParser()
     argparser.add_argument('-fold', type=int, default=0)
+    argparser.add_argument('-model_name', default='baseline')
     args = argparser.parse_args()
 
-    run(fold=args.fold)
+    run(fold=args.fold, model_name=args.model_name)
